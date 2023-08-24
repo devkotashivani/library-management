@@ -6,10 +6,13 @@ import CustomInput from '../../components/customInput/CustomInput';
 import { toast } from 'react-toastify';
 import {signInWithEmailAndPassword} from "firebase/auth"
 import {auth} from "../../config/FirebaseConfig"
+import { getUserAction } from '../../user/userAction';
+import { useDispatch } from 'react-redux';
+
 
 function Login() {
   const [form, setForm] = useState({});
-
+  const dispatch = useDispatch();
   const inputs = [
     {
       label: "Email",
@@ -40,6 +43,8 @@ function Login() {
       pending: "In Progress ...",
     } )
     const signInValue = await signInPromise;
+    // once logged in ..> send another call to firebase and grab user info and then save
+    await getUserAction(signInValue.user.uid, dispatch);
     toast.success("Logged in");
 
   }

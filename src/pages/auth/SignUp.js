@@ -1,28 +1,29 @@
-import React, { useState } from 'react'
-import DefaultLayout from '../../components/layouts/DefaultLayout'
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import CustomInput from '../../components/customInput/CustomInput';
-import { toast } from 'react-toastify';
-import {auth, db} from "../../config/FirebaseConfig"
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import React, { useState } from "react";
+import { Alert } from "react-bootstrap";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import { toast } from "react-toastify";
+import CustomInput from "../../components/customInput/CustomInput";
+import DefaultLayout from "../../components/layouts/DefaultLayout";
+import { auth, db } from "../../config/FirebaseConfig";
 
 function SignUp() {
-
   const [form, setForm] = useState({});
+  const [errorMsg, setErrorMsg] = useState();
 
   const inputs = [
     {
-      label: "FIrst Name",
-      name: "fname",
+      label: "First Name",
+      name: "fName",
       type: "text",
       placeholder: "Sam",
       required: true,
     },
     {
-      label: "FIrst Name",
-      name: "lname",
+      label: "Last Name",
+      name: "lName",
       type: "text",
       placeholder: "Smith",
       required: true,
@@ -31,86 +32,92 @@ function SignUp() {
       label: "Phone",
       name: "phone",
       type: "number",
-      placeholder: "00000",
+      placeholder: "04xxxxxx",
       required: true,
     },
     {
       label: "Email",
       name: "email",
       type: "email",
-      placeholder: "sam@gmail.com",
+      placeholder: "sam@smith.com",
       required: true,
     },
     {
       label: "Password",
       name: "password",
       type: "password",
-      placeholder: "*****",
+      placeholder: "*******",
       required: true,
-      minLength:6,
+      minLength: 6,
     },
     {
       label: "Confirm Password",
-      name: "confirmpassword",
+      name: "confirmPassword",
       type: "password",
-      placeholder: "*****",
+      placeholder: "*******",
       required: true,
-      minLength:6,
-    }
-  ]
-// capture value when someone is typing.
-  const handleOnChange = (e) =>{
-    const {name, value} = e.target;
-    setForm({...form, [name]: value})
-  }
-  const handleOnSubmit = async (e) =>{
+      minLength: 6,
+    },
+  ];
+
+  const handleOnSubmit = async (e) => {
+
     e.preventDefault();
-    if(form.password != form.confirmpassword){
-      toast.error("Confirm pass and pass did not match!"); 
-    return;
+    if (form.password !== form.confirmPassword) {
+      toast.error("Confirm pass and pass did not match");
+      return;
     }
-    // use try catch
-    const {email, password} = form
-    try{
-      console.log(email, password)
-    const authSnapPromise =  createUserWithEmailAndPassword(auth, email, password);
-    toast.promise(authSnapPromise,{
-      pending: "In Progress ...",
-    } )
-    const authSnap =  authSnapPromise;
-      if(authSnap.user.uid){
-        console.log("I am here", form)
-        const returnValue = await setDoc( doc(db, "users", authSnap.user.uid),form);
-        console.log("R",returnValue)
-        toast.success("New User has been created");
-        console.log("Success")
+    // console.log("here")
+    const { email, password } = form;
+    try {
+      const authSnapPromise = createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      toast.promise(authSnapPromise, {
+        pending: "In Progress...",
+        success:"Successfully created"
+      });
+
+      const authSnap = await authSnapPromise;
+      if (authSnap.user.uid) {
+        const docRef = doc(db, "users", authSnap.user.uid);
+        // const { password, confirmPassword, ...rest } = form;
+        // await setDoc(doc(db, "users", authSnap.user.uid), rest);
+        // console.log(authSnap);
+        await setDoc(docRef,form);
+        // toast.success("New user has been created");
       }
-    
-    } catch (e){
-      console.log("Error",e)
-      let {message} = e;
-      if(e.message.includes("auth/email-already-in-use")){
-        toast.error("Email Already Exists");
-      }
-      else{
+    } catch (e) {
+      let { message } = e;
+      console.log(e);
+      if (message.includes("auth/email-already-in-use")) {
+        toast.error("Email already exist, try with different email");
+      } else {
         toast.error(message);
       }
     }
-    
-  }
+  };
+
+  const handleOnChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
+
   return (
     <DefaultLayout>
-      <div className='p-3 border shadow rounded admin-form'>
+      <div className="p-3 border shadow rounded admin-form">
+        {errorMsg && <Alert variant={"danger"}>{errorMsg}</Alert>}
         <Form onSubmit={handleOnSubmit}>
           {inputs.map((input, i) => (
-           
-            <CustomInput 
-            key = {i}
-            onChange = {handleOnChange}
-            // label={input.label} 
-            // placeholder={input.placeholder} 
-            // type={input.type} 
-            {...input}
+            <CustomInput
+              key={i}
+              onChange={handleOnChange}
+              // label={input.label}
+              // placeholder={input.placeholder}
+              // type={input.type}
+              {...input}
             />
           ))}
 
@@ -119,9 +126,8 @@ function SignUp() {
           </Button>
         </Form>
       </div>
-
     </DefaultLayout>
-  )
+  );
 }
 
-export default SignUp
+export default SignUp;
